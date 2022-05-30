@@ -55,6 +55,7 @@ static void sdb_init(void)
 
     sdb_cmd_meta **list = &sdb_cmd_list;
 
+    SDB_CMD_DEFINE(get);
     SDB_CMD_DEFINE(help);
     SDB_CMD_DEFINE(load);
     SDB_CMD_DEFINE(start);
