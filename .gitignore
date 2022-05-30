@@ -1,0 +1,10 @@
+# Target
+/hw4
+
+# Directories
+/build/*
+/test/*
+
+# Extensions
+*.o
+*.log
