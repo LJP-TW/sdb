@@ -11,11 +11,24 @@
 
 sdb_meta sdb;
 
-#define SDB_CMD_DEFINE(CMDNAME) \
+#define SDB_CMD_DEFINE1(CMDNAME) \
     do {                                                              \
         sdb_cmd_meta *meta = malloc(sizeof(sdb_cmd_meta));            \
         meta->next = NULL;                                            \
         meta->name = strdup(#CMDNAME);                                \
+        meta->shortname = NULL;                                       \
+        meta->func = sdb_cmd_##CMDNAME;                               \
+                                                                      \
+        *list = meta;                                                 \
+        list = &meta->next;                                           \
+    } while(0)
+
+#define SDB_CMD_DEFINE2(CMDNAME, SHORTNAME) \
+    do {                                                              \
+        sdb_cmd_meta *meta = malloc(sizeof(sdb_cmd_meta));            \
+        meta->next = NULL;                                            \
+        meta->name = strdup(#CMDNAME);                                \
+        meta->shortname = strdup(#SHORTNAME);                         \
         meta->func = sdb_cmd_##CMDNAME;                               \
                                                                       \
         *list = meta;                                                 \
@@ -27,6 +40,7 @@ typedef int (*sdb_cmd_funcp)(int argc, char **argv);
 typedef struct _sdb_cmd_meta {
     struct _sdb_cmd_meta *next;
     char *name;
+    char *shortname;
     sdb_cmd_funcp func;
 } sdb_cmd_meta;
 
@@ -55,11 +69,11 @@ static void sdb_init(void)
 
     sdb_cmd_meta **list = &sdb_cmd_list;
 
-    SDB_CMD_DEFINE(get);
-    SDB_CMD_DEFINE(help);
-    SDB_CMD_DEFINE(load);
-    SDB_CMD_DEFINE(start);
-    SDB_CMD_DEFINE(vmmap);
+    SDB_CMD_DEFINE2(get, g);
+    SDB_CMD_DEFINE2(help, h);
+    SDB_CMD_DEFINE1(load);
+    SDB_CMD_DEFINE1(start);
+    SDB_CMD_DEFINE2(vmmap, m);
 }
 
 static void sdb_loop(void)
@@ -151,6 +165,10 @@ static sdb_cmd_meta *sdb_get_cmd_meta(char *cmdname)
     sdb_cmd_meta *cmd;
 
     for (cmd = sdb_cmd_list; cmd; cmd = cmd->next) {
+        if (cmd->shortname && !strcmp(cmd->shortname, cmdname)) {
+            break;
+        }
+
         if (!strcmp(cmd->name, cmdname)) {
             break;
         }
