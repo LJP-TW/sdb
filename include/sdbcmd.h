@@ -3,5 +3,6 @@
 
 #include <sdbcmd/help.h>
 #include <sdbcmd/load.h>
+#include <sdbcmd/start.h>
 
 #endif /* _SDBCMD_H */

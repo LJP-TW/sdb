@@ -15,6 +15,7 @@ typedef struct {
     FILE *loaded_file;
     char *loaded_filepath;
     uint64 entry;
+    pid_t pid;
 } sdb_meta;
 
 extern sdb_meta sdb;
