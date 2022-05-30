@@ -58,6 +58,7 @@ static void sdb_init(void)
     SDB_CMD_DEFINE(help);
     SDB_CMD_DEFINE(load);
     SDB_CMD_DEFINE(start);
+    SDB_CMD_DEFINE(vmmap);
 }
 
 static void sdb_loop(void)
