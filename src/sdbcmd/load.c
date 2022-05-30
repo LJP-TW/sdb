@@ -42,6 +42,11 @@ static inline void do_load(char *filename)
 
 int sdb_cmd_load(int argc, char **argv)
 {
+    if (sdb.state != SDB_STATE_EMPTY) {
+        printf("** state must be NOT LOADED\n");
+        return 0;
+    }
+
     if (argc < 2) {
         printf("** no program path is given\n");
         return 0;

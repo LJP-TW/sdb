@@ -62,6 +62,11 @@ static inline void do_start(void)
 
 int sdb_cmd_start(int argc, char **argv)
 {
+    if (sdb.state != SDB_STATE_LOADED) {
+        printf("** state must be LOADED\n");
+        return 0;
+    }
+
     do_start();
 
     return 0;
