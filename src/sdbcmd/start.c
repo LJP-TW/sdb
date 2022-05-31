@@ -45,24 +45,26 @@ static inline void do_start(void)
 
     if (!pid) {
         run_debugee();
-    } else if (pid > 0) {
-        printf("** pid %d\n", pid);
-
-        wait(&wstatus);
-
-        if (WIFEXITED(wstatus)) {
-            // TODO: Handle this situation (execl failed)
-            printf("** child process %d terminiated (execl failed)\n", pid);
-            goto START_END;
-        }
-
-        sdb.state = SDB_STATE_RUNNING;
-        sdb.pid = pid;
-    } else {
+    } else if (pid < 0) {
         ERROR(fork);
     }
+    
+    printf("** pid %d\n", pid);
 
-START_END:
+    wait(&wstatus);
+
+    if (WIFEXITED(wstatus)) {
+        // TODO: Handle this situation (execl failed)
+        printf("** child process %d terminiated (execl failed)\n", pid);
+        return;
+    }
+
+    sdb.state = SDB_STATE_RUNNING;
+    sdb.pid = pid;
+    sdb.running = 0;
+
+    sdb_set_all_bp();
+
     sdb_set_handler();
 }
 

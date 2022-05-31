@@ -3,7 +3,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
+#include <errno.h>
 #include <sys/wait.h>
+#include <sys/ptrace.h>
+#include <sys/user.h>
 
 #include <sdb.h>
 #include <sdbcmd.h>
@@ -48,6 +51,8 @@ typedef struct _sdb_cmd_meta {
 
 sdb_cmd_meta *sdb_cmd_list;
 
+static void sdb_show_disasm(uint64 addr);
+static void sdb_resume_from_bp(void);
 static void sdb_handler(int sig, siginfo_t *info, void *ucontext);
 static void sdb_init(void);
 static void sdb_loop(void);
@@ -88,6 +93,157 @@ void sdb_unset_handler(void)
     sigaction(SIGCHLD, &action, NULL);
 }
 
+void sdb_set_new_bp(uint64 addr)
+{
+    sdb_breakpoint_meta *bp, **p;
+    uint64 data;
+    int idx;
+
+    bp = sdb_find_bp(addr, &idx);
+
+    if (bp) {
+        printf("** the breakpoint is already exists. (breakpoint %d)\n", idx);
+        return;
+    }
+
+    errno = 0;
+
+    // TODO: Check the range of the text segment
+    data = ptrace(PTRACE_PEEKTEXT, sdb.pid, (void *)addr, 0);
+
+    if (errno) {
+        errno = 0;
+
+        printf("** the address is out of the range of the text segment\n");
+        return;
+    }
+
+    bp = malloc(sizeof(sdb_breakpoint_meta));
+    bp->next = NULL;
+    bp->addr = addr;
+    bp->data = data & 0xff;
+
+    p = &sdb.bplist;
+    while (*p) {
+        p = &(*p)->next;
+    }
+    *p = bp;
+}
+
+void sdb_set_all_bp(void)
+{
+    sdb_breakpoint_meta **p;
+    
+    p = &sdb.bplist;
+
+    while (*p) {
+        uint64 newdata, olddata, addr;
+
+        addr = (*p)->addr;
+        olddata = ptrace(PTRACE_PEEKTEXT, sdb.pid, (void *)addr, 0);
+        newdata = (olddata & 0xffffffffffffff00) | 0xCC;
+        ptrace(PTRACE_POKETEXT, sdb.pid, (void *)addr, (void *)newdata);
+
+        p = &(*p)->next;
+    }
+}
+
+void sdb_resume_all_bp(void)
+{
+    sdb_breakpoint_meta **p;
+    
+    p = &sdb.bplist;
+
+    while (*p) {
+        uint64 newdata, olddata, addr;
+
+        addr = (*p)->addr;
+        olddata = ptrace(PTRACE_PEEKTEXT, sdb.pid, (void *)addr, 0);
+        newdata = (olddata & 0xffffffffffffff00) | (*p)->data;
+        ptrace(PTRACE_POKETEXT, sdb.pid, (void *)addr, (void *)newdata);
+
+        p = &(*p)->next;
+    }
+}
+
+static void sdb_show_disasm(uint64 addr)
+{
+    cs_insn *insn;
+    size_t count;
+    char code[0x10];
+    int i;
+
+    *(uint64 *)(&code[0]) = ptrace(PTRACE_PEEKTEXT, sdb.pid,
+                                   (void *)addr, 0);
+    *(uint64 *)(&code[8]) = ptrace(PTRACE_PEEKTEXT, sdb.pid,
+                                   (void *)addr + 8, 0);
+
+    count = cs_disasm(sdb.capstone, code, sizeof(code)-1, addr, 0, &insn);
+    if (count <= 0) {
+        return;
+    }
+
+    printf("%lx: ", insn[0].address);
+    for (i = 0; i < insn[0].size; ++i) {
+        printf("%02x ", insn[0].bytes[i]);
+    }
+    for (; i < 16; ++i) {
+        printf("   ");
+    }    
+    printf("\t%s\t%s\n", insn[0].mnemonic, insn[0].op_str);
+    
+    cs_free(insn, count);
+}
+
+sdb_breakpoint_meta *sdb_find_bp(uint64 addr, int *idx)
+{
+    sdb_breakpoint_meta **p;
+    int n;
+    
+    p = &sdb.bplist;
+    n = 0;
+
+    while (*p) {
+        if ((*p)->addr == addr) {
+            if (idx) {
+                *idx = n;
+            }
+
+            return *p;
+        }
+
+        p = &(*p)->next;
+        n += 1;
+    }
+
+    return NULL;
+}
+
+static void sdb_resume_from_bp(void)
+{
+    sdb_breakpoint_meta *bp;
+    struct user_regs_struct regs;
+
+    ptrace(PTRACE_GETREGS, sdb.pid, NULL, &regs);
+
+    regs.rip -= 1;
+
+    bp = sdb_find_bp(regs.rip, NULL);
+
+    if (!bp) {
+        // TODO: Handle this situation
+        printf("** TODO: Invalid RIP\n");
+        return;
+    }
+
+    ptrace(PTRACE_SETREGS, sdb.pid, NULL, &regs);
+
+    sdb_resume_all_bp();
+
+    printf("** breakpoint @\t");
+    sdb_show_disasm(regs.rip);
+}
+
 static void sdb_handler(int sig, siginfo_t *info, void *ucontext)
 {
     if (info->si_code == CLD_EXITED) {
@@ -97,13 +253,14 @@ static void sdb_handler(int sig, siginfo_t *info, void *ucontext)
         sdb.pid = 0;
         sdb.running = 0;
 
+        sdb_unset_handler();
+
         printf("** child process %d terminiated normally (code %d)\n",
                sdb.pid, info->si_status);
     } else if (info->si_code == CLD_TRAPPED) {
-        // TODO
-        sdb.running = 0;
+        sdb_resume_from_bp();
 
-        printf("** Trapped\n");
+        sdb.running = 0;
     } else {
         printf("** TODO: Handle this situation\n");
     }
@@ -116,9 +273,14 @@ static void sdb_init(void)
     // Initialize sdb
     sdb.state = SDB_STATE_EMPTY;
 
+    if (cs_open(CS_ARCH_X86, CS_MODE_64, &sdb.capstone) != CS_ERR_OK) {
+        exit(1);
+    }
+
     // Define commands
     list = &sdb_cmd_list;
 
+    SDB_CMD_DEFINE2(break, b);
     SDB_CMD_DEFINE2(cont, c);
     SDB_CMD_DEFINE2(get, g);
     SDB_CMD_DEFINE2(help, h);
