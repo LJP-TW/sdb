@@ -51,7 +51,6 @@ typedef struct _sdb_cmd_meta {
 
 sdb_cmd_meta *sdb_cmd_list;
 
-static void sdb_show_disasm(uint64 addr);
 static void sdb_resume_from_bp(void);
 static void sdb_handler(int sig, siginfo_t *info, void *ucontext);
 static void sdb_init(void);
@@ -166,7 +165,7 @@ void sdb_resume_all_bp(void)
     }
 }
 
-static void sdb_show_disasm(uint64 addr)
+void sdb_show_disasm(uint64 addr)
 {
     cs_insn *insn;
     size_t count;
@@ -180,10 +179,11 @@ static void sdb_show_disasm(uint64 addr)
 
     count = cs_disasm(sdb.capstone, code, sizeof(code)-1, addr, 0, &insn);
     if (count <= 0) {
+        printf("** failed to disassemble given code (0x%llx)\n", addr);
         return;
     }
 
-    printf("%lx: ", insn[0].address);
+    printf("\t%lx: ", insn[0].address);
     for (i = 0; i < insn[0].size; ++i) {
         printf("%02x ", insn[0].bytes[i]);
     }
@@ -226,21 +226,18 @@ static void sdb_resume_from_bp(void)
 
     ptrace(PTRACE_GETREGS, sdb.pid, NULL, &regs);
 
-    regs.rip -= 1;
-
-    bp = sdb_find_bp(regs.rip, NULL);
+    bp = sdb_find_bp(regs.rip - 1, NULL);
 
     if (!bp) {
-        // TODO: Handle this situation
-        printf("** TODO: Invalid RIP\n");
         return;
     }
 
+    regs.rip -= 1;
     ptrace(PTRACE_SETREGS, sdb.pid, NULL, &regs);
 
     sdb_resume_all_bp();
 
-    printf("** breakpoint @\t");
+    printf("** breakpoint @");
     sdb_show_disasm(regs.rip);
 }
 
@@ -285,6 +282,7 @@ static void sdb_init(void)
     SDB_CMD_DEFINE2(get, g);
     SDB_CMD_DEFINE2(help, h);
     SDB_CMD_DEFINE1(load);
+    SDB_CMD_DEFINE1(si);
     SDB_CMD_DEFINE1(start);
     SDB_CMD_DEFINE2(vmmap, m);
 }

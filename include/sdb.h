@@ -42,4 +42,6 @@ void sdb_set_new_bp(uint64 addr);
 void sdb_set_all_bp(void);
 void sdb_resume_all_bp(void);
 
+void sdb_show_disasm(uint64 addr);
+
 #endif /* _SDB_H */
