@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
+#include <sys/wait.h>
 
 #include <sdb.h>
 #include <sdbcmd.h>
@@ -46,6 +48,7 @@ typedef struct _sdb_cmd_meta {
 
 sdb_cmd_meta *sdb_cmd_list;
 
+static void sdb_handler(int sig, siginfo_t *info, void *ucontext);
 static void sdb_init(void);
 static void sdb_loop(void);
 static void sdb_prompt(void);
@@ -63,12 +66,60 @@ int main(int argc, char **argv)
     sdb_loop();
 }
 
+void sdb_set_handler(void)
+{
+    struct sigaction action;
+
+    sigemptyset(&action.sa_mask);
+    action.sa_sigaction = sdb_handler;
+    action.sa_flags = SA_SIGINFO;
+
+    sigaction(SIGCHLD, &action, NULL);
+}
+
+void sdb_unset_handler(void)
+{
+    struct sigaction action;
+
+    sigemptyset(&action.sa_mask);
+    action.sa_handler = SIG_DFL;
+    action.sa_flags = 0;
+
+    sigaction(SIGCHLD, &action, NULL);
+}
+
+static void sdb_handler(int sig, siginfo_t *info, void *ucontext)
+{
+    if (info->si_code == CLD_EXITED) {
+        waitpid(sdb.pid, NULL, 0);
+
+        sdb.state = SDB_STATE_LOADED;
+        sdb.pid = 0;
+        sdb.running = 0;
+
+        printf("** child process %d terminiated normally (code %d)\n",
+               sdb.pid, info->si_status);
+    } else if (info->si_code == CLD_TRAPPED) {
+        // TODO
+        sdb.running = 0;
+
+        printf("** Trapped\n");
+    } else {
+        printf("** TODO: Handle this situation\n");
+    }
+}
+
 static void sdb_init(void)
 {
+    sdb_cmd_meta **list;
+
+    // Initialize sdb
     sdb.state = SDB_STATE_EMPTY;
 
-    sdb_cmd_meta **list = &sdb_cmd_list;
+    // Define commands
+    list = &sdb_cmd_list;
 
+    SDB_CMD_DEFINE2(cont, c);
     SDB_CMD_DEFINE2(get, g);
     SDB_CMD_DEFINE2(help, h);
     SDB_CMD_DEFINE1(load);
@@ -86,6 +137,8 @@ static void sdb_loop(void)
         char buf[256];
 
         ret = 0;
+
+        while (sdb.running) {}
 
         while (!ret) {
             sdb_prompt();

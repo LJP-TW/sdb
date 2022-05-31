@@ -1,6 +1,7 @@
 #ifndef _SDBCMD_H
 #define _SDBCMD_H
 
+#include <sdbcmd/cont.h>
 #include <sdbcmd/get.h>
 #include <sdbcmd/help.h>
 #include <sdbcmd/load.h>

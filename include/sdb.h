@@ -16,8 +16,12 @@ typedef struct {
     char *loaded_filepath;
     uint64 entry;
     pid_t pid;
+    int running;
 } sdb_meta;
 
 extern sdb_meta sdb;
+
+void sdb_set_handler(void);
+void sdb_unset_handler(void);
 
 #endif /* _SDB_H */

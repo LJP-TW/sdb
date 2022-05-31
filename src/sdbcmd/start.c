@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 
@@ -37,6 +38,8 @@ static inline void do_start(void)
 {
     pid_t pid;
     int wstatus;
+    
+    sdb_unset_handler();
 
     pid = fork();
 
@@ -50,7 +53,7 @@ static inline void do_start(void)
         if (WIFEXITED(wstatus)) {
             // TODO: Handle this situation (execl failed)
             printf("** child process %d terminiated (execl failed)\n", pid);
-            return;
+            goto START_END;
         }
 
         sdb.state = SDB_STATE_RUNNING;
@@ -58,6 +61,9 @@ static inline void do_start(void)
     } else {
         ERROR(fork);
     }
+
+START_END:
+    sdb_set_handler();
 }
 
 int sdb_cmd_start(int argc, char **argv)
