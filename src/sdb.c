@@ -280,6 +280,7 @@ static void sdb_init(void)
     SDB_CMD_DEFINE2(break, b);
     SDB_CMD_DEFINE2(cont, c);
     SDB_CMD_DEFINE2(get, g);
+    SDB_CMD_DEFINE1(getregs);
     SDB_CMD_DEFINE2(help, h);
     SDB_CMD_DEFINE1(load);
     SDB_CMD_DEFINE2(run, r);
