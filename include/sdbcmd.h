@@ -6,6 +6,7 @@
 #include <sdbcmd/get.h>
 #include <sdbcmd/help.h>
 #include <sdbcmd/load.h>
+#include <sdbcmd/run.h>
 #include <sdbcmd/si.h>
 #include <sdbcmd/start.h>
 #include <sdbcmd/vmmap.h>

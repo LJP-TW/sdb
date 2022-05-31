@@ -42,13 +42,12 @@ static inline void do_continue(void)
     waitpid(sdb.pid, &wstatus, 0);
 
     if (WIFEXITED(wstatus)) {
-        sdb.state = SDB_STATE_LOADED;
-        sdb.pid = 0;
-        sdb.running = 0;
-
         printf("** child process %d terminiated normally (code %d)\n",
                sdb.pid, WEXITSTATUS(wstatus));
 
+        sdb.state = SDB_STATE_LOADED;
+        sdb.pid = 0;
+        sdb.running = 0;
         return;
     }
 

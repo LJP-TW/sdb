@@ -33,7 +33,7 @@ static inline void do_step_ins(void)
     }
 
     // Hit breakpoint again
-    
+
     sdb_resume_all_bp();
 
     sdb_unset_handler();
@@ -45,12 +45,11 @@ static inline void do_step_ins(void)
     sdb.running = 0;
 
     if (WIFEXITED(wstatus)) {
-        sdb.state = SDB_STATE_LOADED;
-        sdb.pid = 0;
-
         printf("** child process %d terminiated normally (code %d)\n",
                sdb.pid, WEXITSTATUS(wstatus));
 
+        sdb.state = SDB_STATE_LOADED;
+        sdb.pid = 0;
         return;
     }
 

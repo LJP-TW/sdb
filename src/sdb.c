@@ -246,14 +246,14 @@ static void sdb_handler(int sig, siginfo_t *info, void *ucontext)
     if (info->si_code == CLD_EXITED) {
         waitpid(sdb.pid, NULL, 0);
 
+        printf("** child process %d terminiated normally (code %d)\n",
+               sdb.pid, info->si_status);
+
         sdb.state = SDB_STATE_LOADED;
         sdb.pid = 0;
         sdb.running = 0;
 
         sdb_unset_handler();
-
-        printf("** child process %d terminiated normally (code %d)\n",
-               sdb.pid, info->si_status);
     } else if (info->si_code == CLD_TRAPPED) {
         sdb_resume_from_bp();
 
@@ -282,6 +282,7 @@ static void sdb_init(void)
     SDB_CMD_DEFINE2(get, g);
     SDB_CMD_DEFINE2(help, h);
     SDB_CMD_DEFINE1(load);
+    SDB_CMD_DEFINE2(run, r);
     SDB_CMD_DEFINE1(si);
     SDB_CMD_DEFINE1(start);
     SDB_CMD_DEFINE2(vmmap, m);
