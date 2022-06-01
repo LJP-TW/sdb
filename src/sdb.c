@@ -294,6 +294,7 @@ static void sdb_init(void)
     SDB_CMD_DEFINE2(list, l);
     SDB_CMD_DEFINE1(load);
     SDB_CMD_DEFINE2(run, r);
+    SDB_CMD_DEFINE2(set, s);
     SDB_CMD_DEFINE1(si);
     SDB_CMD_DEFINE1(start);
     SDB_CMD_DEFINE2(vmmap, m);

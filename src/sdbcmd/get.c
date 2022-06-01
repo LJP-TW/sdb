@@ -7,7 +7,6 @@
 
 #include <sdbcmd/get.h>
 #include <sdb.h>
-#include <utils.h>
 
 #define SHOW_REGISTER(register, value) \
     printf(#register " = %1$llu (0x%1$llx)\n", value)

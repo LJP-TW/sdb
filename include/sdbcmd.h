@@ -11,6 +11,7 @@
 #include <sdbcmd/list.h>
 #include <sdbcmd/load.h>
 #include <sdbcmd/run.h>
+#include <sdbcmd/set.h>
 #include <sdbcmd/si.h>
 #include <sdbcmd/start.h>
 #include <sdbcmd/vmmap.h>
