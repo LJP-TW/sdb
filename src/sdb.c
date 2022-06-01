@@ -286,6 +286,7 @@ static void sdb_init(void)
 
     SDB_CMD_DEFINE2(break, b);
     SDB_CMD_DEFINE2(cont, c);
+    SDB_CMD_DEFINE1(delete);
     SDB_CMD_DEFINE2(disasm, d);
     SDB_CMD_DEFINE2(dump, x);
     SDB_CMD_DEFINE2(get, g);

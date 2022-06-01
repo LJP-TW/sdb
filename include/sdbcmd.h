@@ -3,6 +3,7 @@
 
 #include <sdbcmd/break.h>
 #include <sdbcmd/cont.h>
+#include <sdbcmd/delete.h>
 #include <sdbcmd/disasm.h>
 #include <sdbcmd/dump.h>
 #include <sdbcmd/get.h>
