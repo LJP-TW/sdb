@@ -8,6 +8,7 @@
 #include <sdbcmd/get.h>
 #include <sdbcmd/getregs.h>
 #include <sdbcmd/help.h>
+#include <sdbcmd/list.h>
 #include <sdbcmd/load.h>
 #include <sdbcmd/run.h>
 #include <sdbcmd/si.h>

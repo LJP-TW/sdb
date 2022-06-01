@@ -49,7 +49,7 @@ typedef struct _sdb_cmd_meta {
     sdb_cmd_funcp func;
 } sdb_cmd_meta;
 
-sdb_cmd_meta *sdb_cmd_list;
+sdb_cmd_meta *sdb_cmd_meta_list;
 
 static void sdb_resume_from_bp(void);
 static void sdb_handler(int sig, siginfo_t *info, void *ucontext);
@@ -206,7 +206,7 @@ sdb_breakpoint_meta *sdb_find_bp(uint64 addr, int *idx)
 {
     sdb_breakpoint_meta **p;
     int n;
-    
+
     p = &sdb.bplist;
     n = 0;
 
@@ -282,7 +282,7 @@ static void sdb_init(void)
     }
 
     // Define commands
-    list = &sdb_cmd_list;
+    list = &sdb_cmd_meta_list;
 
     SDB_CMD_DEFINE2(break, b);
     SDB_CMD_DEFINE2(cont, c);
@@ -291,6 +291,7 @@ static void sdb_init(void)
     SDB_CMD_DEFINE2(get, g);
     SDB_CMD_DEFINE1(getregs);
     SDB_CMD_DEFINE2(help, h);
+    SDB_CMD_DEFINE2(list, l);
     SDB_CMD_DEFINE1(load);
     SDB_CMD_DEFINE2(run, r);
     SDB_CMD_DEFINE1(si);
@@ -388,7 +389,7 @@ static sdb_cmd_meta *sdb_get_cmd_meta(char *cmdname)
 {
     sdb_cmd_meta *cmd;
 
-    for (cmd = sdb_cmd_list; cmd; cmd = cmd->next) {
+    for (cmd = sdb_cmd_meta_list; cmd; cmd = cmd->next) {
         if (cmd->shortname && !strcmp(cmd->shortname, cmdname)) {
             break;
         }
