@@ -31,7 +31,7 @@ int sdb_cmd_disasm(int argc, char **argv)
     }
 
     if (argc < 2) {
-        printf("** no addr is given.\n");
+        printf("** no addr is given\n");
         return 0;
     }
 
