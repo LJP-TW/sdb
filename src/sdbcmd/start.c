@@ -63,8 +63,6 @@ static inline void do_start(void)
     sdb.pid = pid;
     sdb.running = 0;
 
-    sdb_set_all_bp();
-
     sdb_set_handler();
 }
 
