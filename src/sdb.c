@@ -18,7 +18,7 @@ sdb_meta sdb;
 
 #define SDB_CMD_DEFINE1(CMDNAME) \
     do {                                                              \
-        sdb_cmd_meta *meta = malloc(sizeof(sdb_cmd_meta));            \
+        sdb_command_meta *meta = malloc(sizeof(sdb_command_meta));    \
         meta->next = NULL;                                            \
         meta->name = strdup(#CMDNAME);                                \
         meta->shortname = NULL;                                       \
@@ -30,7 +30,7 @@ sdb_meta sdb;
 
 #define SDB_CMD_DEFINE2(CMDNAME, SHORTNAME) \
     do {                                                              \
-        sdb_cmd_meta *meta = malloc(sizeof(sdb_cmd_meta));            \
+        sdb_command_meta *meta = malloc(sizeof(sdb_command_meta));    \
         meta->next = NULL;                                            \
         meta->name = strdup(#CMDNAME);                                \
         meta->shortname = strdup(#SHORTNAME);                         \
@@ -42,14 +42,14 @@ sdb_meta sdb;
 
 typedef int (*sdb_cmd_funcp)(int argc, char **argv);
 
-typedef struct _sdb_cmd_meta {
-    struct _sdb_cmd_meta *next;
+typedef struct _sdb_command_meta {
+    struct _sdb_command_meta *next;
     char *name;
     char *shortname;
     sdb_cmd_funcp func;
-} sdb_cmd_meta;
+} sdb_command_meta;
 
-sdb_cmd_meta *sdb_cmd_meta_list;
+sdb_command_meta *sdb_command_meta_list;
 
 static void sdb_resume_from_bp(void);
 static void sdb_handler(int sig, siginfo_t *info, void *ucontext);
@@ -58,8 +58,8 @@ static void sdb_loop(void);
 static void sdb_prompt(void);
 static int sdb_read_cmdline(char *buf);
 static int sdb_parse_cmdline(char *cmdline, char **argv);
-static sdb_cmd_meta *sdb_get_cmd_meta(char *cmdname);
-static void sdb_dispatch_cmd(sdb_cmd_meta *cmd, int argc, char **argv);
+static sdb_command_meta *sdb_get_cmd_meta(char *cmdname);
+static void sdb_dispatch_cmd(sdb_command_meta *cmd, int argc, char **argv);
 
 int main(int argc, char **argv)
 {   
@@ -272,7 +272,7 @@ static void sdb_handler(int sig, siginfo_t *info, void *ucontext)
 
 static void sdb_init(void)
 {
-    sdb_cmd_meta **list;
+    sdb_command_meta **list;
 
     // Initialize sdb
     sdb.state = SDB_STATE_EMPTY;
@@ -282,7 +282,7 @@ static void sdb_init(void)
     }
 
     // Define commands
-    list = &sdb_cmd_meta_list;
+    list = &sdb_command_meta_list;
 
     SDB_CMD_DEFINE2(break, b);
     SDB_CMD_DEFINE2(cont, c);
@@ -302,7 +302,7 @@ static void sdb_init(void)
 static void sdb_loop(void)
 {
     while (1) {
-        sdb_cmd_meta *cmd;
+        sdb_command_meta *cmd;
         int ret;
         int argc;
         char *argv[MAX_CMD_ARGV];
@@ -385,11 +385,11 @@ static int sdb_parse_cmdline(char *cmdline, char **argv)
     return argc;
 }
 
-static sdb_cmd_meta *sdb_get_cmd_meta(char *cmdname)
+static sdb_command_meta *sdb_get_cmd_meta(char *cmdname)
 {
-    sdb_cmd_meta *cmd;
+    sdb_command_meta *cmd;
 
-    for (cmd = sdb_cmd_meta_list; cmd; cmd = cmd->next) {
+    for (cmd = sdb_command_meta_list; cmd; cmd = cmd->next) {
         if (cmd->shortname && !strcmp(cmd->shortname, cmdname)) {
             break;
         }
@@ -407,7 +407,7 @@ static sdb_cmd_meta *sdb_get_cmd_meta(char *cmdname)
     return cmd;
 }
 
-static void sdb_dispatch_cmd(sdb_cmd_meta *cmd, int argc, char **argv)
+static void sdb_dispatch_cmd(sdb_command_meta *cmd, int argc, char **argv)
 {
     cmd->func(argc, argv);
 }
