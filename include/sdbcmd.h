@@ -6,6 +6,7 @@
 #include <sdbcmd/delete.h>
 #include <sdbcmd/disasm.h>
 #include <sdbcmd/dump.h>
+#include <sdbcmd/exit.h>
 #include <sdbcmd/get.h>
 #include <sdbcmd/getregs.h>
 #include <sdbcmd/help.h>
