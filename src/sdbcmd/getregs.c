@@ -4,7 +4,7 @@
 #include <sys/ptrace.h>
 #include <sys/user.h>
 
-#include <sdbcmd/break.h>
+#include <sdbcmd/getregs.h>
 #include <sdb.h>
 
 static inline void do_getregs(void)

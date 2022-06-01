@@ -5,7 +5,7 @@
 #include <sys/wait.h>
 #include <sys/user.h>
 
-#include <sdbcmd/cont.h>
+#include <sdbcmd/si.h>
 #include <sdb.h>
 
 static inline void do_step_ins(void)

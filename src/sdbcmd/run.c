@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <sdbcmd/break.h>
+#include <sdbcmd/run.h>
 #include <sdb.h>
 #include <sdbcmd/cont.h>
 #include <sdbcmd/start.h>
