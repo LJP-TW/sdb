@@ -165,12 +165,17 @@ void sdb_resume_all_bp(void)
     }
 }
 
-void sdb_show_disasm(uint64 addr)
+int sdb_show_disasm(uint64 addr)
 {
     cs_insn *insn;
     size_t count;
     char code[0x10];
     int i;
+
+    if (addr < sdb.stext || sdb.etext <= addr) {
+        printf("** the address is out of the range of the text segment\n");
+        return -1;
+    }
 
     *(uint64 *)(&code[0]) = ptrace(PTRACE_PEEKTEXT, sdb.pid,
                                    (void *)addr, 0);
@@ -180,7 +185,7 @@ void sdb_show_disasm(uint64 addr)
     count = cs_disasm(sdb.capstone, code, sizeof(code)-1, addr, 0, &insn);
     if (count <= 0) {
         printf("** failed to disassemble given code (0x%llx)\n", addr);
-        return;
+        return -1;
     }
 
     printf("\t%lx: ", insn[0].address);
@@ -193,6 +198,8 @@ void sdb_show_disasm(uint64 addr)
     printf("\t%s\t%s\n", insn[0].mnemonic, insn[0].op_str);
     
     cs_free(insn, count);
+
+    return insn[0].size;
 }
 
 sdb_breakpoint_meta *sdb_find_bp(uint64 addr, int *idx)
@@ -279,6 +286,7 @@ static void sdb_init(void)
 
     SDB_CMD_DEFINE2(break, b);
     SDB_CMD_DEFINE2(cont, c);
+    SDB_CMD_DEFINE2(disasm, d);
     SDB_CMD_DEFINE2(get, g);
     SDB_CMD_DEFINE1(getregs);
     SDB_CMD_DEFINE2(help, h);

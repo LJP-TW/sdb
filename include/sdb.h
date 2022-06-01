@@ -24,6 +24,8 @@ typedef struct {
     FILE *loaded_file;
     char *loaded_filepath;
     uint64 entry;
+    uint64 stext;
+    uint64 etext;
     pid_t pid;
     // Is debugee running
     int running;
@@ -42,6 +44,6 @@ void sdb_set_new_bp(uint64 addr);
 void sdb_set_all_bp(void);
 void sdb_resume_all_bp(void);
 
-void sdb_show_disasm(uint64 addr);
+int sdb_show_disasm(uint64 addr);
 
 #endif /* _SDB_H */
