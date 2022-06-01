@@ -40,13 +40,13 @@ sdb_meta sdb;
         list = &meta->next;                                           \
     } while(0)
 
-typedef int (*sdb_cmd_funcp)(int argc, char **argv);
+typedef int (*sdb_command_funcp)(int argc, char **argv);
 
 typedef struct _sdb_command_meta {
     struct _sdb_command_meta *next;
     char *name;
     char *shortname;
-    sdb_cmd_funcp func;
+    sdb_command_funcp func;
 } sdb_command_meta;
 
 sdb_command_meta *sdb_command_meta_list;
