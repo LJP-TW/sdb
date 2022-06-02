@@ -28,3 +28,18 @@ Simplified Scriptable Instruction Level Debugger
 - si: step into instruction
 - start: start the program and stop at the first instruction
 ```
+
+# Script
+Example:
+```
+load sample/hello64
+start
+b 0x4000c6
+l
+cont
+set rip 0x4000b0
+cont
+delete 0
+set rip 0x4000b0
+cont
+```
