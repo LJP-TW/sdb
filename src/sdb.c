@@ -11,6 +11,7 @@
 #include <sdb.h>
 #include <sdbcmd.h>
 #include <argv.h>
+#include <utils.h>
 
 #define MAX_CMD_ARGV 8
 
@@ -55,17 +56,37 @@ static void sdb_resume_from_bp(void);
 static void sdb_handler(int sig, siginfo_t *info, void *ucontext);
 static void sdb_init(void);
 static void sdb_loop(void);
+static void sdb_loop_script(void);
 static void sdb_prompt(void);
 static int sdb_read_cmdline(char *buf);
 static int sdb_parse_cmdline(char *cmdline, char **argv);
 static sdb_command_meta *sdb_get_cmd_meta(char *cmdname);
 static void sdb_dispatch_cmd(sdb_command_meta *cmd, int argc, char **argv);
+static void sdb_run_one_cmd(char *cmd);
 
 int main(int argc, char **argv)
 {   
     parse_args(argc, argv);
     
     sdb_init();
+
+    if (sdb_args.program) {
+        char buf[256];
+
+        sprintf(buf, "load %.250s", sdb_args.program);
+
+        sdb_run_one_cmd(buf);
+    }
+
+    if (sdb_args.script) {
+        char buf[] = "exit";
+
+        sdb_loop_script();
+
+        sdb_run_one_cmd(buf);
+
+        return 0;
+    }
 
     sdb_loop();
 }
@@ -305,31 +326,66 @@ static void sdb_init(void)
 static void sdb_loop(void)
 {
     while (1) {
-        sdb_command_meta *cmd;
         int ret;
-        int argc;
-        char *argv[MAX_CMD_ARGV];
         char buf[256];
-
-        ret = 0;
 
         while (sdb.running) {}
 
+        ret = 0;
         while (!ret) {
             sdb_prompt();
             ret = sdb_read_cmdline(buf);
         }
 
-        argc = sdb_parse_cmdline(buf, argv);
+        sdb_run_one_cmd(buf);
+    }
+}
 
-        cmd = sdb_get_cmd_meta(argv[0]);
-        
-        if (!cmd) {
-            continue;
+static void sdb_loop_script(void)
+{
+    FILE *file;
+
+    file = fopen(sdb_args.script, "r");
+    if (!file) {
+        ERROR(fopen);
+    }
+
+    while (1) {
+        char *ret;
+        char buf[256];
+
+        while (sdb.running) {}
+
+        errno = 0;
+
+        ret = fgets(buf, 256, file);
+
+        if (errno) {
+            ERROR(fgets);
         }
 
-        sdb_dispatch_cmd(cmd, argc, argv);
+        if (!ret) {
+            break;
+        }
+
+        ret = buf;
+        while (*ret) {
+            if (*ret == '\0') {
+                break;
+            }
+
+            if (*ret == '\n') {
+                *ret = '\0';
+                break;
+            }
+
+            ret++;
+        }
+
+        sdb_run_one_cmd(buf);
     }
+
+    fclose(file);
 }
 
 static void sdb_prompt(void)
@@ -413,4 +469,24 @@ static sdb_command_meta *sdb_get_cmd_meta(char *cmdname)
 static void sdb_dispatch_cmd(sdb_command_meta *cmd, int argc, char **argv)
 {
     cmd->func(argc, argv);
+}
+
+static void sdb_run_one_cmd(char *buf)
+{
+    sdb_command_meta *cmd;
+    int ret;
+    int argc;
+    char *argv[MAX_CMD_ARGV];
+
+    ret = 0;
+
+    argc = sdb_parse_cmdline(buf, argv);
+
+    cmd = sdb_get_cmd_meta(argv[0]);
+    
+    if (!cmd) {
+        return;
+    }
+
+    sdb_dispatch_cmd(cmd, argc, argv);
 }
