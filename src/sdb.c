@@ -191,7 +191,7 @@ int sdb_show_disasm(uint64 addr)
     cs_insn *insn;
     size_t count;
     char code[0x10];
-    int i;
+    int i, ret;
 
     if (addr < sdb.stext || sdb.etext <= addr) {
         printf("** the address is out of the range of the text segment\n");
@@ -218,9 +218,11 @@ int sdb_show_disasm(uint64 addr)
     }    
     printf("\t%s\t%s\n", insn[0].mnemonic, insn[0].op_str);
     
+    ret = insn[0].size;
+
     cs_free(insn, count);
 
-    return insn[0].size;
+    return ret;
 }
 
 sdb_breakpoint_meta *sdb_find_bp(uint64 addr, int *idx)
